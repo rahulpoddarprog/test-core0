@@ -3,33 +3,22 @@ import { drive } from '@/lib/drive'
 import { Readable } from 'stream'
 
 export const config = {
-  api: {
-    responseLimit: false, // allows streaming large image files
-  },
+  api: { responseLimit: false },
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const fileId = req.query.fileId as string
-
   if (!fileId) {
-    res.status(400).send('Missing fileId')
-    return
+    return res.status(400).send('Missing fileId')
   }
-
   try {
-    const metadataRes = await drive.files.get({
-      fileId,
-      fields: 'name, mimeType',
-    })
-
+    const metadataRes = await drive.files.get({ fileId, fields: 'name, mimeType' })
     const fileStream = await drive.files.get(
       { fileId, alt: 'media' },
       { responseType: 'stream' }
     )
-
     res.setHeader('Content-Disposition', `inline; filename="${metadataRes.data.name}"`)
     res.setHeader('Content-Type', metadataRes.data.mimeType || 'application/octet-stream')
-
     ;(fileStream.data as Readable).pipe(res)
   } catch (err) {
     console.error('File stream error:', err)

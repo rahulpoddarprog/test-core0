@@ -1,4 +1,4 @@
-import { NextApiRequest } from 'next'
+import type { NextApiRequest } from 'next'
 import supabase from './supabaseClient'
 
 export async function verifyToken(req: NextApiRequest) {

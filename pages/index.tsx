@@ -29,7 +29,6 @@ export default function LoginPage() {
 
     localStorage.setItem('userToken', token)
     localStorage.setItem('userEmail', email)
-    setStatusMsg('✅ Login successful!')
     router.push('/dashboard')
   }
 

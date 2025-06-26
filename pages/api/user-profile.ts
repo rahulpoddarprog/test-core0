@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ success: false, error: 'Unauthorized' })
   }
 
-  const email = req.body.email
+  const { email } = req.body
   try {
     const { data, error } = await supabase
       .from('users')

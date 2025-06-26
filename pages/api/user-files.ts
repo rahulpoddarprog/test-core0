@@ -16,18 +16,20 @@ const drive = google.drive({ version: 'v3', auth })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method Not Allowed' })
+    return res.status(405).json({ success: false, error: 'Method not allowed' })
   }
 
   const token = req.headers.authorization?.split(' ')[1]
-  if (!token) return res.status(401).json({ success: false, error: 'No token provided' })
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Missing token' })
+  }
 
   const { data: userData, error: authError } = await supabase.auth.getUser(token)
   if (authError || !userData?.user?.email) {
     return res.status(401).json({ success: false, error: 'Unauthorized' })
   }
 
-  const email = req.body.email
+  const { email } = req.body
   try {
     const folderRes = await drive.files.list({
       q: `name contains '${email}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
@@ -38,14 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!folders?.length) return res.status(200).json({ success: true, files: [] })
 
     const folderId = folders[0].id
-
     const fileRes = await drive.files.list({
       q: `'${folderId}' in parents and trashed = false and mimeType contains 'image/'`,
       fields: 'files(id, name)',
     })
 
     const files = fileRes.data.files || []
-
     const filesWithMetadata = await Promise.all(
       files.map(async (file) => {
         let meta = null
@@ -56,13 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .eq('filename', file.name)
             .single()
           if (!error) meta = data
-        } catch (_) {}
-
-        return {
-          id: file.id,
-          name: file.name,
-          metadata: meta,
+        } catch (err) {
+          console.error('Metadata lookup error:', err)
         }
+        return { id: file.id, name: file.name, metadata: meta }
       })
     )
 
