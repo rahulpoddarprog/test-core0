@@ -83,7 +83,7 @@ export default function Dashboard() {
         files.forEach(file => {
           html += `
             <div style="margin-top:1rem; border:1px solid #ccc; padding:10px;">
-              <img src="/api/file?fileId=${file.id}" alt="${file.name}" style="max-width:100%;">
+              <img src="/api/file?fileId=${file.id}" alt="${file.name}" style="max-width:10%;">
               <div style="margin-top:0.5rem; font-size:14px;">
                 <strong>TNX ID:</strong> ${file.metadata?.tnx_id || 'N/A'}<br>
                 <strong>Amount:</strong> ₹${file.metadata?.amount || 'N/A'}<br>
