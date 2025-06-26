@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
-import type { ReactNode } from 'react'
 
+interface FileMetadata {
+  tnx_id?: string
+  amount?: number
+  payment_date?: string
+  paid_to?: string
+  remark?: string
+}
+
+interface FileWithMetadata {
+  id: string
+  name: string
+  metadata: FileMetadata | null
+}
 
 export default function Dashboard() {
   const router = useRouter()
-  const [userInfo, setUserInfo] = useState<ReactNode>('Loading your data...')
+  const [userHtml, setUserHtml] = useState<string>('Loading your data...')
 
   const logout = () => {
     localStorage.clear()
@@ -17,7 +29,7 @@ export default function Dashboard() {
     const email = localStorage.getItem('userEmail')
 
     if (!token || !email) {
-      setUserInfo('⚠️ Not logged in.')
+      setUserHtml('⚠️ Not logged in.')
       return
     }
 
@@ -37,7 +49,7 @@ export default function Dashboard() {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
-              },
+            },
             body: JSON.stringify({ email }),
           }),
         ])
@@ -46,39 +58,27 @@ export default function Dashboard() {
         const userFiles = await filesRes.json()
 
         if (!userProfile.success || !userFiles.success) {
-          setUserInfo('❌ Failed to load data.')
+          setUserHtml('❌ Failed to load data.')
           return
         }
 
         const user = userProfile.data
-        const files = userFiles.files
+        const files: FileWithMetadata[] = userFiles.files
 
         let html = `
           <p><strong>Name:</strong> ${user.name}</p>
-          <p><strong>Phase:</strong> ${user.petitionphase}</p>
-          <p><strong>Serial No:</strong> ${user.petitioneserialnumber}</p>
+          <p><strong>Phase:</strong> ${user.petitionerphase}</p>
+          <p><strong>Serial No:</strong> ${user.petitionerserialno}</p>
           <p><strong>Dept:</strong> ${user.department}</p>
           <p><strong>College Roll:</strong> ${user.collegeroll}</p>
           <p><strong>University Roll:</strong> ${user.universityroll}</p>
           <h3>Drive Images:</h3>
         `
 
-        interface FileWithMetadata {
-          id: string
-          name: string
-          metadata: {
-            tnx_id?: string
-            amount?: number
-            payment_date?: string
-            paid_to?: string
-            remark?: string
-          } | null
-        }
-
-        files.forEach((file: any) => {
+        files.forEach(file => {
           html += `
             <div style="margin-top:1rem; border:1px solid #ccc; padding:10px;">
-              <img src="/api/file?fileId=${file.id}" alt="${file.name}" style="max-width:10%;">
+              <img src="/api/file?fileId=${file.id}" alt="${file.name}" style="max-width:100%;">
               <div style="margin-top:0.5rem; font-size:14px;">
                 <strong>TNX ID:</strong> ${file.metadata?.tnx_id || 'N/A'}<br>
                 <strong>Amount:</strong> ₹${file.metadata?.amount || 'N/A'}<br>
@@ -90,10 +90,10 @@ export default function Dashboard() {
           `
         })
 
-        setUserInfo(<div dangerouslySetInnerHTML={{ __html: html }} />)
+        setUserHtml(html)
       } catch (err) {
         console.error(err)
-        setUserInfo('❌ Error loading data.')
+        setUserHtml('❌ Error loading data.')
       }
     }
 
@@ -103,7 +103,7 @@ export default function Dashboard() {
   return (
     <main style={{ padding: '2rem' }}>
       <h2>User Dashboard</h2>
-      <div>{userInfo}</div>
+      <div dangerouslySetInnerHTML={{ __html: userHtml }} />
       <br />
       <button onClick={logout}>Logout</button>
     </main>
