@@ -1,22 +1,41 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import supabase from '@/lib/supabaseClient'
-import { verifyToken } from '@/lib/verifyToken'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end('Method Not Allowed')
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' })
+  }
 
-  const user = await verifyToken(req)
-  if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' })
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Missing token' })
+  }
 
-  const { email } = req.body
+  const { data: userData, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !userData?.user?.email) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' })
+  }
 
-  const { data, error } = await supabase
-    .from('petitioners')
-    .select('name,petitionphase,petitioneserialnumber,department,collegeroll,universityroll,dateofbirth,dateofadmission,contactnumber,gender,tfwstatus,parentsname,parentscontact')
-    .eq('email', email)
-    .single()
+  const email = req.body.email
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('petitionerphase, petitionerserialno, name, contactnumber, department, collegeroll, universityroll')
+      .eq('email', email)
+      .single()
 
-  if (error || !data) return res.status(404).json({ success: false, error: 'User not found' })
+    if (error || !data) {
+      return res.status(404).json({ success: false, error: 'User not found' })
+    }
 
-  res.status(200).json({ success: true, data })
+    return res.status(200).json({ success: true, data })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ success: false, error: 'Server error' })
+  }
 }

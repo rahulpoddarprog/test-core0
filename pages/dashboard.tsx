@@ -54,11 +54,16 @@ export default function Dashboard() {
           }),
         ])
 
+        if (!profileRes.ok || !filesRes.ok) {
+          setUserHtml('❌ Failed to load user data.')
+          return
+        }
+
         const userProfile = await profileRes.json()
         const userFiles = await filesRes.json()
 
         if (!userProfile.success || !userFiles.success) {
-          setUserHtml('❌ Failed to load data.')
+          setUserHtml('❌ Could not fetch profile or files.')
           return
         }
 
@@ -92,8 +97,8 @@ export default function Dashboard() {
 
         setUserHtml(html)
       } catch (err) {
-        console.error(err)
-        setUserHtml('❌ Error loading data.')
+        console.error('❌ Error fetching data:', err)
+        setUserHtml('❌ Unexpected error loading dashboard.')
       }
     }
 
