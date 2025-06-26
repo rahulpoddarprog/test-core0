@@ -63,6 +63,18 @@ export default function Dashboard() {
           <h3>Drive Images:</h3>
         `
 
+        interface FileWithMetadata {
+          id: string
+          name: string
+          metadata: {
+            tnx_id?: string
+            amount?: number
+            payment_date?: string
+            paid_to?: string
+            remark?: string
+          } | null
+        }
+
         files.forEach((file: any) => {
           html += `
             <div style="margin-top:1rem; border:1px solid #ccc; padding:10px;">
