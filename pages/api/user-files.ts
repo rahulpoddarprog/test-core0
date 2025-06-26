@@ -1,16 +1,33 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import supabase from '@/lib/supabaseClient'
-import { verifyToken } from '@/lib/verifyToken'
-import { drive } from '@/lib/drive'
+import { createClient } from '@supabase/supabase-js'
+import { google } from 'googleapis'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+const auth = new google.auth.GoogleAuth({
+  credentials: JSON.parse(Buffer.from(process.env.GOOGLE_CREDENTIALS_BASE64!, 'base64').toString()),
+  scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+})
+
+const drive = google.drive({ version: 'v3', auth })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end('Method Not Allowed')
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method Not Allowed' })
+  }
 
-  const user = await verifyToken(req)
-  if (!user) return res.status(401).json({ success: false, error: 'Unauthorized' })
+  const token = req.headers.authorization?.split(' ')[1]
+  if (!token) return res.status(401).json({ success: false, error: 'No token provided' })
 
-  const { email } = req.body
+  const { data: userData, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !userData?.user?.email) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' })
+  }
 
+  const email = req.body.email
   try {
     const folderRes = await drive.files.list({
       q: `name contains '${email}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
@@ -18,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     const folders = folderRes.data.files
-    if (!folders || folders.length === 0) return res.json({ success: true, files: [] })
+    if (!folders?.length) return res.status(200).json({ success: true, files: [] })
 
     const folderId = folders[0].id
 
@@ -31,27 +48,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const filesWithMetadata = await Promise.all(
       files.map(async (file) => {
+        let meta = null
         try {
           const { data, error } = await supabase
             .from('files')
             .select('tnx_id, amount, payment_date, paid_to, remark')
             .eq('filename', file.name)
             .single()
+          if (!error) meta = data
+        } catch (_) {}
 
-          return {
-            id: file.id,
-            name: file.name,
-            metadata: error ? null : data,
-          }
-        } catch {
-          return { id: file.id, name: file.name, metadata: null }
+        return {
+          id: file.id,
+          name: file.name,
+          metadata: meta,
         }
       })
     )
 
     return res.status(200).json({ success: true, files: filesWithMetadata })
   } catch (err) {
-    console.error('Drive fetch error:', err)
+    console.error(err)
     return res.status(500).json({ success: false, error: 'File load error' })
   }
 }
