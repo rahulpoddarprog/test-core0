@@ -72,11 +72,19 @@ export default function Dashboard() {
 
         let html = `
           <p><strong>Name:</strong> ${user.name}</p>
-          <p><strong>Phase:</strong> ${user.petitionerphase}</p>
-          <p><strong>Serial No:</strong> ${user.petitionerserialno}</p>
+          <p><strong>Phase:</strong> ${user.petitionphase}</p>
+          <p><strong>Serial No:</strong> ${user.petitioneserialnumber}</p>
           <p><strong>Dept:</strong> ${user.department}</p>
           <p><strong>College Roll:</strong> ${user.collegeroll}</p>
           <p><strong>University Roll:</strong> ${user.universityroll}</p>
+          <p><strong>Date of Birth:</strong> ${user.dateofbirth}</p>
+          <p><strong>Date of Admission:</strong> ${user.dateofadmission}</p>
+          <p><strong>Contact Number:</strong> ${user.contactnumber}</p>
+          <p><strong>Gender:</strong> ${user.gender}</p>
+          <p><strong>TFW Status:</strong> ${user.tfwstatus}</p>
+          <p><strong>Parent's Name:</strong> ${user.parentsname}</p>
+          <p><strong>Parent's Contact Number:</strong> ${user.parentscontact}</p>
+          <p><strong>Taking Loan:</strong> ${user.takingloan}</p>
           <h3>Drive Images:</h3>
         `
 

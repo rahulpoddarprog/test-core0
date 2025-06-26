@@ -24,8 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { email } = req.body
   try {
     const { data, error } = await supabase
-      .from('users')
-      .select('petitionerphase, petitionerserialno, name, contactnumber, department, collegeroll, universityroll')
+      .from('petitioners')
+      .select('name,petitionphase, petitioneserialnumber, department, collegeroll, universityroll, dateofbirth, dateofadmission,contactnumber,gender,tfwstatus,parentsname,parentscontact,takingloan')
       .eq('email', email)
       .single()
 
